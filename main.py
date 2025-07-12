@@ -316,8 +316,6 @@ def quary_handler(call):
 
                 markup.add(minus_button, name_button, plus_button)
 
-
-        bot.send_message(call.message.chat.id, f"Блюда '{item[0]}' на один больше.")
         if len(call.message.text) > 8:
             global LIST_OF_NUMBERS
             if call.message.text[9] == "+":
