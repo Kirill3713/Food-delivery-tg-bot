@@ -4,6 +4,8 @@ from config import api_token
 import logging
 from telebot import types
 import json
+import time
+import random
 # Объявляем переменные
 TOKEN = api_token
 bot = telebot.TeleBot(TOKEN)
@@ -18,7 +20,6 @@ menu_items = [
         {"name": "Паста Карбонара", "price": "550 руб.", "photo": "carbonara.png"},
         {"name": "Гаспачо", "price": "350 руб.", "photo": "gazpacho.png"},
         {"name": "Фалафель", "price": "400 руб.", "photo": "falafel.png"}
-
 ]
 ITEMS_PER_PAGE = 4
 LIST_OF_NUMBERS = {}
@@ -65,7 +66,7 @@ def save_number(message, name):
     logging.info("Сохраняем номер телефона клиента.")
     # Обрабатываем и проверяем номер
     new_number = message.text.replace("+", "").replace(" ", "").strip()
-    if message.text[0] == "+" and len(message.text) > 10 and len(message.text) < 17 and message.text.isdigit():
+    if len(message.text) > 10 and len(message.text) < 17 and message.text.isdigit():
         new_number = message.text
     else:
         bot.send_message(message.chat.id, "Вы ввели неправильный номер. Попробуйте еще раз.")
@@ -220,6 +221,24 @@ def reply_on_location(message):
         bot.reply_to(message, f"Ваш заказ прибудет по адресу {message.text} через 5 минут.")
     elif message.content_type == 'location':
         bot.reply_to(message, f"Ваш заказ прибудет по координатам {message.location.latitude}, {message.location.longitude} через 5 минут.")
+    # time.sleep(random.randint(1, 7))
+    bot.send_message(message.chat.id, f"Ваш заказ прибыл. К оплате {calculate_cart_total(message.chat.id)} руб.")
+def calculate_cart_total(client_id) -> int:
+    """
+    Функция для подсчета стоимости.
+    """
+    logging.info("Считаем стоимость заказа")
+    total_price = 0
+    with open("data.json", "r", encoding="utf-8") as json_file:
+        data = json.load(json_file)
+        for client in data["clients"]:
+            if client["id"] == str(client_id):
+                for dish in client["cart"]:
+                    for item in menu_items:
+                        if item["name"] == dish[0]:
+                            total_price += int(menu_items[menu_items.index(item)]["price"].replace(" руб.", ""))*dish[1]
+    return total_price
+
 # Декоратор
 @bot.message_handler(commands=["start"])
 def handle_start(message):
